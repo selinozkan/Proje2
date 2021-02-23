@@ -1,4 +1,6 @@
 ﻿using Business.Abstract;
+using Business.Constants;
+using Core.Utilities.Results;
 using DataAccess.Abstract;
 using Entites.Concrete;
 using Entites.DTOs;
@@ -17,24 +19,45 @@ namespace Business.Concrate
             _productDal = productDal;
         }
 
-        public List<Product> GetAll()
+        public IResult Add(Product product)
         {
-            return _productDal.GetAll();
+            if (product.ProductName.Length < 2)
+            { // magic string
+                return new ErrorResult(Messages.ProductNameInvalid);
+            }
+            _productDal.Add(product);
+            return new SuccessResult(Messages.ProductAdded);
         }
 
-        public List<Product> GetAllByCategoryId(int id)
-        {
-            return _productDal.GetAll(p => p.CategoryId == id);
+        public IDateResult<List<Product>> GetAll()
+        {if (DateTime.Now.Hour == 22)
+            {
+                return new ErrorDateResult<List<Product>>(Messages.MaintenanceTime);
+            }
+            return new SuccessDateResult<List<Product>> (_productDal.GetAll() ,Messages.ProductsListed);
         }
 
-        public List<Product> GetByUnitPrice(decimal min, decimal max)
+        public IDateResult<List<Product>> GetAllByCategoryId(int id)
         {
-            return _productDal.GetAll(p => p.UnitPrice >= min && p.UnitPrice <= max);
+            return new SuccessDateResult<List<Product>>( _productDal.GetAll(p => p.CategoryId == id));
         }
 
-        public List<ProductDetailDto> GetProductDetails()
+        public IDateResult<Product> GetById(int productId)
         {
-            return _productDal.GetProductDetails();
+            return new SuccessDateResult<Product>(_productDal.Get(p => p.ProductId == productId));
         }
+
+        public IDateResult<List<Product>> GetByUnitPrice(decimal min, decimal max)
+        {
+            return new SuccessDateResult<List<Product>>
+                (  _productDal.GetAll(p => p.UnitPrice >= min && p.UnitPrice <= max));
+        }
+
+        public IDateResult<List<ProductDetailDto>> GetProductDetails()
+        {
+            return new SuccessDateResult<List<ProductDetailDto>>(_productDal.GetProductDetails());
+        }
+
+       
     }
 }
